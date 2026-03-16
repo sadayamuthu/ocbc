@@ -1,0 +1,80 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "https://openastra.org/ocbc/schema/v0.1/ocbc.yaml"
+title: Open Controls Baseline Catalog Catalog
+description: Schema for the enriched NIST SP 800-53 Rev. 5 control catalog produced by OCBC.
+type: object
+required:
+  - project
+  - project_version
+  - generated_at_utc
+  - framework
+  - count
+  - controls
+properties:
+  project:
+    type: string
+  project_version:
+    type: string
+  generated_at_utc:
+    type: string
+    format: date-time
+  framework:
+    type: string
+  reference:
+    type: object
+  rules:
+    type: object
+  count:
+    type: integer
+    minimum: 1
+  controls:
+    type: array
+    minItems: 1
+    items:
+      type: object
+      required:
+        - control_id
+        - control_name
+        - family
+        - severity
+        - non_negotiable
+        - baseline_membership
+        - fedramp_membership
+      properties:
+        control_id:
+          type: string
+        control_name:
+          type: string
+        family:
+          type: string
+        control_text:
+          type: string
+        discussion:
+          type: ["string", "null"]
+        related_controls:
+          type: ["string", "null"]
+        parent_control_id:
+          type: ["string", "null"]
+        baseline_membership:
+          type: object
+          required: [low, moderate, high, privacy]
+          properties:
+            low: { type: boolean }
+            moderate: { type: boolean }
+            high: { type: boolean }
+            privacy: { type: boolean }
+        fedramp_membership:
+          type: object
+          required: [li_saas, low, moderate, high]
+          properties:
+            li_saas: { type: boolean }
+            low: { type: boolean }
+            moderate: { type: boolean }
+            high: { type: boolean }
+        severity:
+          type: string
+          enum: [LOW, MEDIUM, HIGH, CRITICAL]
+        non_negotiable:
+          type: boolean
+      additionalProperties: false
+additionalProperties: false

@@ -1,0 +1,178 @@
+name: Main Release Pipeline
+
+on:
+  schedule:
+    - cron: "0 6 * * *"
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: main-release
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install package with dev dependencies
+        run: make install-dev
+
+      - name: Run code validation checks
+        run: make check
+
+  generate-and-release:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install package
+        run: make install
+
+      - name: Generate baseline JSON
+        run: make generate
+
+      - name: Commit and push baseline
+        id: commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          DATE=$(date -u +%Y-%m-%d)
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Bootstrap baseline-artifacts branch if it doesn't exist yet
+          if ! git ls-remote --exit-code --heads origin baseline-artifacts; then
+            (
+              trap 'git checkout main 2>/dev/null || true' EXIT
+              git checkout --orphan baseline-artifacts
+              git rm -rf . >/dev/null 2>/dev/null || true
+              git commit --allow-empty -m "chore: initialize baseline-artifacts branch"
+              git push origin baseline-artifacts
+            )
+          fi
+
+          # Clean up any stale worktree before adding
+          git worktree remove --force /tmp/artifacts 2>/dev/null || true
+          rm -rf /tmp/artifacts
+
+          # Check out baseline-artifacts into a worktree
+          git fetch origin baseline-artifacts
+          git worktree add /tmp/artifacts origin/baseline-artifacts  # detached HEAD is intentional
+
+          # Copy generated baseline files
+          cp baseline/ocbc_full_catalog_enriched.json /tmp/artifacts/
+
+          # Commit and force-push if anything changed
+          cd /tmp/artifacts
+          git add .
+          if ! git diff --cached --quiet; then
+            git commit -m "baseline: update enriched catalog $(date -u +%Y-%m-%d)"
+            git pull --rebase -X theirs origin main
+            git push
+            echo "pushed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No changes to commit."
+            echo "pushed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publish catalog to openastra.org
+        if: steps.commit.outputs.pushed == 'true'
+        env:
+          DEPLOY_TOKEN: ${{ secrets.OCBC_DEPLOY_TOKEN }}
+        run: |
+          VERSION=$(tr -d '[:space:]' < spec/VERSION)
+          SCHEMA_DIR="v$(echo $VERSION | cut -d. -f1-2)"
+          DATE=$(date -u +%Y-%m-%d)
+
+          git clone https://x-access-token:${DEPLOY_TOKEN}@github.com/sadayamuthu/openastra.org.git /tmp/openastra-org
+
+          mkdir -p /tmp/openastra-org/ocbc/catalog/${SCHEMA_DIR}/historical
+          cp baseline/ocbc_full_catalog_enriched.json \
+            /tmp/openastra-org/ocbc/catalog/${SCHEMA_DIR}/latest.json
+          cp baseline/ocbc_full_catalog_enriched.json \
+            /tmp/openastra-org/ocbc/catalog/${SCHEMA_DIR}/historical/${DATE}.json
+
+          cd /tmp/openastra-org
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git add ocbc/catalog/${SCHEMA_DIR}/
+          if git diff --cached --quiet; then
+            echo "No catalog changes to publish."
+          else
+            git commit -m "catalog: update ocbc baseline ${DATE}"
+            git push
+          fi
+
+      - name: Create GitHub Release
+        if: steps.commit.outputs.pushed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="baseline-$(date -u +%Y-%m-%d)"
+          COUNT=$(jq '.count' baseline/ocbc_full_catalog_enriched.json)
+          GENERATED=$(jq -r '.generated_at_utc' baseline/ocbc_full_catalog_enriched.json)
+          VERSION=$(tr -d '[:space:]' < spec/VERSION)
+          SCHEMA_DIR="v$(echo $VERSION | cut -d. -f1-2)"
+
+          gh release delete "$TAG" --yes 2>/dev/null || true
+          git tag -d "$TAG" 2>/dev/null || true
+          git push origin ":refs/tags/$TAG" 2>/dev/null || true
+
+          git tag "$TAG"
+          git push origin "$TAG"
+
+          gh release create "$TAG" \
+            --title "Open Controls Baseline Catalog — ${TAG}" \
+            --notes "$(cat <<EOF
+          ## Open Controls Baseline Catalog (OCBC)
+
+          **Framework:** NIST SP 800-53 Rev. 5
+          **Generated at:** ${GENERATED}
+          **Total controls:** ${COUNT}
+
+          ### Catalog URL
+
+          - Latest: https://openastra.org/ocbc/catalog/${SCHEMA_DIR}/latest.json
+          - This date: https://openastra.org/ocbc/catalog/${SCHEMA_DIR}/historical/$(date -u +%Y-%m-%d).json
+
+          > Generated automatically by GitHub Actions from NIST OSCAL data.
+          EOF
+          )"
+
+      - name: Update repository metadata
+        if: steps.commit.outputs.pushed == 'true'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh repo edit \
+            --description "Machine-readable NIST SP 800-53 Rev. 5 cloud security baseline with enriched severity, baseline membership, and non-negotiable flags. Auto-updated daily." \
+            --add-topic nist \
+            --add-topic nist-800-53 \
+            --add-topic oscal \
+            --add-topic cloud-security \
+            --add-topic compliance \
+            --add-topic security-baseline \
+            --add-topic fedramp
