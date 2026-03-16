@@ -1,7 +1,7 @@
 {
   "project": "Open Controls Baseline Catalog (OCBC)",
   "project_version": "0.1.0",
-  "generated_at_utc": "2026-03-16T15:13:06Z",
+  "generated_at_utc": "2026-03-16T15:45:42Z",
   "framework": "NIST SP 800-53 Rev. 5",
   "reference": {
     "publication": "https://csrc.nist.gov/publications/detail/sp/800-53/rev-5/final",
