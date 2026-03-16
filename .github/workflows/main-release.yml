@@ -89,8 +89,7 @@ jobs:
           git add .
           if ! git diff --cached --quiet; then
             git commit -m "baseline: update enriched catalog $(date -u +%Y-%m-%d)"
-            git pull --rebase -X theirs origin main
-            git push
+            git push origin HEAD:baseline-artifacts
             echo "pushed=true" >> "$GITHUB_OUTPUT"
           else
             echo "No changes to commit."
