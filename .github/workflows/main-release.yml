@@ -107,16 +107,16 @@ jobs:
 
           git clone https://x-access-token:${DEPLOY_TOKEN}@github.com/sadayamuthu/openastra.org.git /tmp/openastra-org
 
-          mkdir -p /tmp/openastra-org/ocbc/catalog/${SCHEMA_DIR}/historical
+          mkdir -p /tmp/openastra-org/public/ocbc/catalog/${SCHEMA_DIR}/historical
           cp baseline/ocbc_full_catalog_enriched.json \
-            /tmp/openastra-org/ocbc/catalog/${SCHEMA_DIR}/latest.json
+            /tmp/openastra-org/public/ocbc/catalog/${SCHEMA_DIR}/latest.json
           cp baseline/ocbc_full_catalog_enriched.json \
-            /tmp/openastra-org/ocbc/catalog/${SCHEMA_DIR}/historical/${DATE}.json
+            /tmp/openastra-org/public/ocbc/catalog/${SCHEMA_DIR}/historical/${DATE}.json
 
           cd /tmp/openastra-org
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git config user.name "github-actions[bot]"
-          git add ocbc/catalog/${SCHEMA_DIR}/
+          git add public/ocbc/catalog/${SCHEMA_DIR}/
           if git diff --cached --quiet; then
             echo "No catalog changes to publish."
           else

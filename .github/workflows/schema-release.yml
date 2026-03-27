@@ -54,14 +54,14 @@ jobs:
 
           git clone https://x-access-token:${DEPLOY_TOKEN}@github.com/sadayamuthu/openastra.org.git /tmp/openastra-org
 
-          mkdir -p /tmp/openastra-org/ocbc/schema/${SCHEMA_DIR}
-          cp spec/schemas/ocbc-v*.json /tmp/openastra-org/ocbc/schema/${SCHEMA_DIR}/ocbc.json
-          cp spec/schemas/ocbc-v*.yaml /tmp/openastra-org/ocbc/schema/${SCHEMA_DIR}/ocbc.yaml 2>/dev/null || true
+          mkdir -p /tmp/openastra-org/public/ocbc/schema/${SCHEMA_DIR}
+          cp spec/schemas/ocbc-v*.json /tmp/openastra-org/public/ocbc/schema/${SCHEMA_DIR}/ocbc.json
+          cp spec/schemas/ocbc-v*.yaml /tmp/openastra-org/public/ocbc/schema/${SCHEMA_DIR}/ocbc.yaml 2>/dev/null || true
 
           cd /tmp/openastra-org
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git config user.name "github-actions[bot]"
-          git add ocbc/schema/${SCHEMA_DIR}/
+          git add public/ocbc/schema/${SCHEMA_DIR}/
           if git diff --cached --quiet; then
             echo "No schema changes to publish."
           else
