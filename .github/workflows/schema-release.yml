@@ -15,7 +15,7 @@ jobs:
     name: Publish schema to openastra.org and GitHub Releases
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Read and validate VERSION
         id: version
@@ -70,7 +70,7 @@ jobs:
           fi
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: spec-v${{ steps.version.outputs.version }}
           name: "OCBC Schema v${{ steps.version.outputs.version }}"
