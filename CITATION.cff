@@ -1,0 +1,27 @@
+cff-version: 1.2.0
+message: "If you use OCBC, please cite it using the metadata below."
+type: software
+title: "OCBC: Open Controls Baseline Catalog"
+abstract: >-
+  OCBC is a machine-readable, cloud-agnostic security controls catalog. It
+  merges the NIST SP 800-53 Rev. 5 control catalog with the SP 800-53B
+  baseline profiles and the FedRAMP baselines, all read from their OSCAL
+  JSON, and enriches every control with baseline membership flags, a derived
+  severity level and a non-negotiable indicator. The catalog is regenerated
+  daily and published as a single JSON file with a JSON Schema; the ocbc
+  Python package downloads it or regenerates it from the official sources.
+authors:
+  - family-names: Sadayamuthu
+    given-names: Karthikeyan
+    orcid: "https://orcid.org/0009-0008-3539-6048"
+version: 0.1.1
+date-released: "2026-11-03"
+license: MIT
+repository-code: "https://github.com/sadayamuthu/ocbc"
+url: "https://openastra.org"
+keywords:
+  - NIST SP 800-53
+  - FedRAMP
+  - OSCAL
+  - security controls
+  - machine-readable catalog

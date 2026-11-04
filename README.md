@@ -8,13 +8,14 @@
 
 [![CI](https://img.shields.io/github/actions/workflow/status/sadayamuthu/ocbc/main-release.yml?label=CI&style=flat-square)](https://github.com/sadayamuthu/ocbc/actions)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue?style=flat-square)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
+[![PyPI](https://img.shields.io/pypi/v/ocbc?style=flat-square)](https://pypi.org/project/ocbc/)
+[![License](https://img.shields.io/github/license/sadayamuthu/ocbc?style=flat-square)](LICENSE)
 [![Catalog](https://img.shields.io/badge/catalog-latest.json-orange?style=flat-square)](https://openastra.org/ocbc/catalog/v0.1/latest.json)
 [![Schema](https://img.shields.io/badge/schema-v0.1-blueviolet?style=flat-square)](https://openastra.org/ocbc/schema/v0.1/ocbc.json)
 
 ---
 
-[What is OCBC?](#what-is-ocbc) · [How It Works](#how-it-works) · [Distribution](#distribution) · [Quick Start](#quick-start) · [Features](#features) · [Development](#development)
+[What is OCBC?](#what-is-ocbc) · [How It Works](#how-it-works) · [Distribution](#distribution) · [Quick Start](#quick-start) · [Features](#features) · [Development](#development) · [Contributing](#contributing)
 
 </div>
 
@@ -91,11 +92,11 @@ ocbc generate --out baseline/ocbc_full_catalog_enriched.json
 ## Features
 
 - **Zero configuration** — downloads source OSCAL profiles directly from NIST and the GSA FedRAMP automation repo; no local data files to maintain.
-- **Enriched output** — every control gets `severity` (LOW / MEDIUM / HIGH / CRITICAL) and `non_negotiable` (boolean) fields derived from configurable rules.
+- **Enriched output** — every control gets `severity` (LOW / MEDIUM / HIGH / CRITICAL) and `non_negotiable` (boolean) fields derived from its baseline membership.
 - **Baseline membership** — flags each control's presence in the NIST (Low, Moderate, High, Privacy) and FedRAMP (LI-SaaS, Low, Moderate, High) baselines.
 - **Parent-enhancement linkage** — enhancement controls (e.g. `AC-2(1)`) are linked back to their parent (`AC-2`).
-- **Configurable** — override any source URL or rule via CLI flags.
-- **CI-ready** — ships with a GitHub Actions workflow that regenerates the baseline daily and commits the result.
+- **Configurable** — override any source URL, and the non-negotiable threshold, via CLI flags.
+- **CI-ready** — ships with a GitHub Actions workflow that regenerates the baseline daily and commits the result to the `baseline-artifacts` branch.
 
 ---
 
@@ -146,12 +147,12 @@ The generated JSON has this top-level structure:
 ```json
 {
   "project": "Open Controls Baseline Catalog (OCBC)",
-  "project_version": "0.1.0",
+  "project_version": "0.1.1",
   "generated_at_utc": "2026-02-18T06:00:00Z",
   "framework": "NIST SP 800-53 Rev. 5",
-  "reference": { "publication": "...", "downloads": "..." },
+  "reference": { "publication": "...", "oscal_content": "..." },
   "rules": { "severity_definition": { ... }, "non_negotiable_min_baseline": "moderate" },
-  "count": 1189,
+  "count": 1196,
   "controls": [ ... ]
 }
 ```
@@ -252,13 +253,18 @@ ocbc/
 │   └── test_schema_validation.py
 ├── baseline/
 │   └── historical/
-├── .github/workflows/
-│   ├── develop.yml
-│   ├── main-release.yml
-│   ├── pypi-publish.yml
-│   └── schema-release.yml
+├── .github/
+│   ├── dependabot.yml
+│   └── workflows/
+│       ├── develop.yml
+│       ├── main-release.yml
+│       ├── pypi-publish.yml
+│       └── schema-release.yml
 ├── pyproject.toml
 ├── Makefile
+├── CITATION.cff
+├── CONTRIBUTING.md
+├── SECURITY.md
 └── LICENSE
 ```
 
@@ -266,13 +272,13 @@ ocbc/
 
 ## Automation
 
-Two workflows handle publishing:
+Three workflows handle publishing:
 
 **`main-release.yml`** — runs daily at 06:00 UTC (and on push to `main`, or manually):
 1. Runs the test suite across Python 3.11, 3.12, and 3.13
-2. Generates `baseline/ocbc_full_catalog_enriched.json` and commits it to this repo
-3. Pushes `latest.json` and a dated historical copy to `openastra.org/ocbc/catalog/v0.1/`
-4. Creates a GitHub Release (tag + changelog — the catalog URL is the artifact)
+2. Generates `baseline/ocbc_full_catalog_enriched.json` and, if it changed, commits it to the `baseline-artifacts` branch
+3. If the catalog changed, pushes `latest.json` and a dated historical copy to `openastra.org/ocbc/catalog/v0.1/`
+4. If the catalog changed, creates a GitHub Release tagged `baseline-YYYY-MM-DD` (the catalog URL is the artifact)
 
 **`schema-release.yml`** — triggers only when `spec/**` changes:
 1. Reads `spec/VERSION` (semver), validates it, checks the tag doesn't already exist
@@ -283,7 +289,7 @@ Two workflows handle publishing:
 1. Builds the `ocbc` Python package
 2. Publishes to PyPI via OIDC Trusted Publishing (no API token required)
 
-To bump the schema version, update `spec/VERSION` and add the new schema files to `spec/schemas/`.
+Every change under `spec/` needs a new `spec/VERSION`, because the release fails if its tag already exists. For a new output structure, bump the minor or major version and replace the files in `spec/schemas/` with `ocbc-v{MAJOR.MINOR}.json` and `.yaml`; keep one version of each. See [CONTRIBUTING.md](CONTRIBUTING.md#schema-versioning).
 
 ---
 
@@ -291,6 +297,7 @@ To bump the schema version, update `spec/VERSION` and add the new schema files t
 
 ```bash
 make install-dev   # Install with dev dependencies
+make lint          # Lint (ruff)
 make test          # Run tests
 make test-cov      # Run tests with 100% coverage enforcement
 make format        # Auto-format code
@@ -310,9 +317,25 @@ If NIST or GSA changes file names or paths, update `src/ocbc/urls.py` or pass th
 
 ---
 
+## Contributing
+
+Bug reports, wrong control mappings and pull requests are welcome. See
+[CONTRIBUTING.md](CONTRIBUTING.md) for the development setup, the checks CI
+runs and how the schema is versioned.
+
+---
+
+## Security
+
+Please don't report security problems in a public issue. Use
+[Report a vulnerability](https://github.com/sadayamuthu/ocbc/security/advisories/new)
+instead; see [SECURITY.md](SECURITY.md).
+
+---
+
 ## License
 
-MIT — for this repository's code. NIST content is public domain (U.S. Government work).
+[MIT License](LICENSE) — for this repository's code. NIST content is public domain (U.S. Government work).
 
 ---
 
