@@ -175,3 +175,18 @@ jobs:
             --add-topic compliance \
             --add-topic security-baseline \
             --add-topic fedramp
+
+  # GitHub disables scheduled workflows after 60 days without repository activity, which
+  # stopped the daily catalog on 2026-03-27. Re-enabling through the API on every scheduled
+  # run keeps the schedule alive. It runs even if the other jobs fail.
+  keepalive:
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - name: Keep the scheduled workflow enabled
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X PUT "repos/${{ github.repository }}/actions/workflows/main-release.yml/enable"
+
