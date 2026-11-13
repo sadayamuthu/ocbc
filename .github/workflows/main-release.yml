@@ -107,16 +107,16 @@ jobs:
 
           git clone https://x-access-token:${DEPLOY_TOKEN}@github.com/sadayamuthu/openastra.org.git /tmp/openastra-org
 
-          mkdir -p /tmp/openastra-org/ocbc/catalog/${SCHEMA_DIR}/historical
+          mkdir -p /tmp/openastra-org/public/ocbc/catalog/${SCHEMA_DIR}/historical
           cp baseline/ocbc_full_catalog_enriched.json \
-            /tmp/openastra-org/ocbc/catalog/${SCHEMA_DIR}/latest.json
+            /tmp/openastra-org/public/ocbc/catalog/${SCHEMA_DIR}/latest.json
           cp baseline/ocbc_full_catalog_enriched.json \
-            /tmp/openastra-org/ocbc/catalog/${SCHEMA_DIR}/historical/${DATE}.json
+            /tmp/openastra-org/public/ocbc/catalog/${SCHEMA_DIR}/historical/${DATE}.json
 
           cd /tmp/openastra-org
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git config user.name "github-actions[bot]"
-          git add ocbc/catalog/${SCHEMA_DIR}/
+          git add public/ocbc/catalog/${SCHEMA_DIR}/
           if git diff --cached --quiet; then
             echo "No catalog changes to publish."
           else
@@ -175,3 +175,18 @@ jobs:
             --add-topic compliance \
             --add-topic security-baseline \
             --add-topic fedramp
+
+  # GitHub disables scheduled workflows after 60 days without repository activity, which
+  # stopped the daily catalog on 2026-03-27. Re-enabling through the API on every scheduled
+  # run keeps the schedule alive. It runs even if the other jobs fail.
+  keepalive:
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - name: Keep the scheduled workflow enabled
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X PUT "repos/${{ github.repository }}/actions/workflows/main-release.yml/enable"
+
