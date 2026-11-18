@@ -2,7 +2,7 @@ name: Main Release Pipeline
 
 on:
   schedule:
-    - cron: "0 6 * * *"
+    - cron: "0 6 * * 1"  # weekly, Mondays 06:00 UTC
   push:
     branches: [main]
   workflow_dispatch:
@@ -167,7 +167,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh repo edit \
-            --description "Machine-readable NIST SP 800-53 Rev. 5 cloud security baseline with enriched severity, baseline membership, and non-negotiable flags. Auto-updated daily." \
+            --description "Machine-readable NIST SP 800-53 Rev. 5 cloud security baseline with enriched severity, baseline membership, and non-negotiable flags. Auto-updated weekly." \
             --add-topic nist \
             --add-topic nist-800-53 \
             --add-topic oscal \
