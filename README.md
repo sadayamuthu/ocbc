@@ -4,7 +4,7 @@
 
 <h3>Machine-Readable NIST SP 800-53 Rev. 5 + FedRAMP Enriched Catalog</h3>
 
-<p>Daily-updated · Zero install · Cloud-agnostic</p>
+<p>Weekly-updated · Zero install · Cloud-agnostic</p>
 
 [![CI](https://img.shields.io/github/actions/workflow/status/sadayamuthu/ocbc/main-release.yml?label=CI&style=flat-square)](https://github.com/sadayamuthu/ocbc/actions)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue?style=flat-square)](https://www.python.org/downloads/)
@@ -23,7 +23,7 @@
 
 ## What is OCBC?
 
-**OCBC** publishes a daily, machine-readable, cloud-agnostic security baseline derived from authoritative NIST publications — fetch it directly, no install required:
+**OCBC** publishes a weekly, machine-readable, cloud-agnostic security baseline derived from authoritative NIST publications — fetch it directly, no install required:
 
 ```
 https://openastra.org/ocbc/catalog/v0.1/latest.json
@@ -49,12 +49,12 @@ FedRAMP Baselines    ──┘
 
 ## Distribution
 
-The catalog is published daily at a stable URL — no package to install.
+The catalog is published weekly at a stable URL — no package to install.
 
 | Artifact | URL | Updated |
 |---|---|---|
-| Latest catalog | `https://openastra.org/ocbc/catalog/v0.1/latest.json` | daily |
-| Historical catalog | `https://openastra.org/ocbc/catalog/v0.1/historical/YYYY-MM-DD.json` | daily |
+| Latest catalog | `https://openastra.org/ocbc/catalog/v0.1/latest.json` | weekly |
+| Historical catalog | `https://openastra.org/ocbc/catalog/v0.1/historical/YYYY-MM-DD.json` | weekly |
 | JSON Schema | `https://openastra.org/ocbc/schema/v0.1/ocbc.json` | on schema change |
 | YAML Schema | `https://openastra.org/ocbc/schema/v0.1/ocbc.yaml` | on schema change |
 
@@ -96,7 +96,7 @@ ocbc generate --out baseline/ocbc_full_catalog_enriched.json
 - **Baseline membership** — flags each control's presence in the NIST (Low, Moderate, High, Privacy) and FedRAMP (LI-SaaS, Low, Moderate, High) baselines.
 - **Parent-enhancement linkage** — enhancement controls (e.g. `AC-2(1)`) are linked back to their parent (`AC-2`).
 - **Configurable** — override any source URL, and the non-negotiable threshold, via CLI flags.
-- **CI-ready** — ships with a GitHub Actions workflow that regenerates the baseline daily and commits the result to the `baseline-artifacts` branch.
+- **CI-ready** — ships with a GitHub Actions workflow that regenerates the baseline weekly and commits the result to the `baseline-artifacts` branch.
 
 ---
 
@@ -274,7 +274,7 @@ ocbc/
 
 Three workflows handle publishing:
 
-**`main-release.yml`** — runs daily at 06:00 UTC (and on push to `main`, or manually):
+**`main-release.yml`** — runs weekly on Mondays at 06:00 UTC (and on push to `main`, or manually):
 1. Runs the test suite across Python 3.11, 3.12, and 3.13
 2. Generates `baseline/ocbc_full_catalog_enriched.json` and, if it changed, commits it to the `baseline-artifacts` branch
 3. If the catalog changed, pushes `latest.json` and a dated historical copy to `openastra.org/ocbc/catalog/v0.1/`
